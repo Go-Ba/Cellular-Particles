@@ -280,11 +280,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6c7fbfc1728b03f4bb8e54fc79ef4c04, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  width: 30
-  height: 30
-  mousePos: {x: 0, y: 0}
-  adjPos: {x: 0, y: 0}
-  screenAspect: 0
+  width: 500
+  height: 500
+  brushSize: 1
+  useCoroutine: 0
+  simulateDone: 0
 --- !u!4 &2090333887
 Transform:
   m_ObjectHideFlags: 0
