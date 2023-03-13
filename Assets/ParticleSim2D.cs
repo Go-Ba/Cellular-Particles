@@ -10,37 +10,27 @@ enum Element
     Air,
     Wall,
     Sand,
-    Water
+    Water,
+    Wood,
+    Gravel
 }
 public class ParticleSim2D : MonoBehaviour
 {
-    class D
-    {
-        public static Vector2Int Up { get; private set; } = Vector2Int.up;
-        public static Vector2Int Down { get; private set; } = Vector2Int.down;
-        public static Vector2Int Left { get; private set; } = Vector2Int.left;
-        public static Vector2Int Right { get; private set; } = Vector2Int.right;
-        public static Vector2Int UpRight { get; private set; } = Vector2Int.up + Vector2Int.right;
-        public static Vector2Int DownRight { get; private set; } = Vector2Int.down + Vector2Int.right;
-        public static Vector2Int UpLeft { get; private set; } = Vector2Int.up + Vector2Int.left;
-        public static Vector2Int DownLeft { get; private set; } = Vector2Int.down + Vector2Int.left;
-        public static Vector2Int InvertX(Vector2Int _in) { return _in * new Vector2Int(-1, 1); }
-        public static Vector2Int InvertY(Vector2Int _in) { return _in * new Vector2Int(1, -1); }
-    }
     class Cell
     {
         public Element ID { get; private set; } = Element.Air;
         public Vector2 velocity = Vector2.zero;
         public bool hasSimulated = false;
         public bool needsRedraw = false;
-
         public void SetElement(Element _in) { ID = _in; }
     }
     [SerializeField] int width;
     [SerializeField] int height;
     [SerializeField] int brushSize = 1;
     [SerializeField] float FPS = 30;
+    [SerializeField] Element SelectedElement;
     float lastFrameTime;
+
     Cell[,] grid;
     Texture2D texture;
     int frameNum;
@@ -50,14 +40,17 @@ public class ParticleSim2D : MonoBehaviour
     {
         if (!useCoroutine)
         {
-            if (Time.time < lastFrameTime + 1 / FPS)
-                return;
-            lastFrameTime = Time.time;
-
             Stopwatch timer = Stopwatch.StartNew();
             string diagnostic = "";
 
             HandleInput();
+
+            if (Time.time < lastFrameTime + 1 / FPS)
+            {
+                timer.Stop();
+                return;
+            }
+            lastFrameTime = Time.time;
 
             timer.Stop();
             diagnostic += $"Input: {timer.ElapsedMilliseconds}ms | ";
@@ -94,10 +87,14 @@ public class ParticleSim2D : MonoBehaviour
         if (InGridRange(m.x, m.y))
         {
             if (Input.GetMouseButton(0))
-                ApplyBrush(m.x, m.y, Element.Sand);
+                ApplyBrush(m.x, m.y, SelectedElement);
             if (Input.GetMouseButton(1))
-                ApplyBrush(m.x, m.y, Element.Water);
+                ApplyBrush(m.x, m.y, Element.Air);
         }
+        if (Input.GetKeyDown(KeyCode.E))       
+            SelectedElement = (Element)((int)SelectedElement + 1);
+        if (Input.GetKeyDown(KeyCode.Q))
+            SelectedElement = (Element)((int)SelectedElement - 1);
     }
     void ApplyBrush(int _x, int _y, Element _e)
     {
@@ -209,10 +206,13 @@ public class ParticleSim2D : MonoBehaviour
                 break;
             case Element.Water: WaterUpdate(pos);
                 break;
+            case Element.Gravel: GravelUpdate(pos);
+                break;
             default:
                 break;
         }
     }
+    //TODO: reduce code repetition
     void SandUpdate(Vector2Int _pos)
     {
         var dir = Random.value < 0.5f ? D.DownRight : D.DownLeft;
@@ -252,6 +252,39 @@ public class ParticleSim2D : MonoBehaviour
             SwapPixels(_pos, dir2);
         else if (GetElement(_pos, D.InvertX(dir2)) == Element.Air)
             SwapPixels(_pos, D.InvertX(dir2));
+    }
+    void GravelUpdate(Vector2Int _pos)
+    {
+        var dir = Random.value < 0.5f ? D.Right : D.Left;
+        int depthCheck = 5;
+        //check below
+        if (GetElement(_pos, D.Down) == Element.Air)
+            SwapPixels(_pos, D.Down);
+        else if (GetElement(_pos, D.Down) == Element.Water)
+            ExpelPixel(_pos, D.Down);
+
+        //check if there is air at a certain distance below
+        //if so, the stack is unstable and falls to the side if there is room
+        else if (GetElement(_pos, dir) == Element.Air && DepthCheck(_pos + dir, depthCheck, Element.Air))
+            SwapPixels(_pos, dir + D.Down);
+        else if (GetElement(_pos, D.InvertX(dir)) == Element.Air && DepthCheck(_pos + D.InvertX(dir), depthCheck, Element.Air))
+            SwapPixels(_pos, D.InvertX(dir) + D.Down);
+
+        /*
+        else if (GetElement(_pos, dir) == Element.Water)
+            ExpelPixel(_pos, dir);
+        else if (GetElement(_pos, D.InvertX(dir)) == Element.Water)
+            ExpelPixel(_pos, D.InvertX(dir));*/
+    }
+    bool DepthCheck(Vector2Int _start, int _depth, Element _element)
+    {
+        for (int i = 0; i < _depth; i++)
+        {
+            if (GetElement(_start, D.Down) != _element)
+                return false;
+            _start += D.Down;
+        }
+        return true;
     }
     Element GetElement(Vector2Int _pos, Vector2Int _direction) 
         => GetElement(_pos.x + _direction.x, _pos.y + _direction.y);
@@ -298,7 +331,23 @@ public class ParticleSim2D : MonoBehaviour
             case Element.Wall: return Color.magenta;
             case Element.Sand: return Color.yellow;
             case Element.Water: return new Color(0, 0.4f, 1, 1);
+            case Element.Wood: return new Color(0.6f, 0.2f, 0.1f, 1);
+            case Element.Gravel: return new Color(0.5f, 0.5f, 0.5f, 1);
+
             default: return Color.black;
         }
+    }
+    class D
+    {
+        public static Vector2Int Up { get; private set; } = Vector2Int.up;
+        public static Vector2Int Down { get; private set; } = Vector2Int.down;
+        public static Vector2Int Left { get; private set; } = Vector2Int.left;
+        public static Vector2Int Right { get; private set; } = Vector2Int.right;
+        public static Vector2Int UpRight { get; private set; } = Vector2Int.up + Vector2Int.right;
+        public static Vector2Int DownRight { get; private set; } = Vector2Int.down + Vector2Int.right;
+        public static Vector2Int UpLeft { get; private set; } = Vector2Int.up + Vector2Int.left;
+        public static Vector2Int DownLeft { get; private set; } = Vector2Int.down + Vector2Int.left;
+        public static Vector2Int InvertX(Vector2Int _in) { return _in * new Vector2Int(-1, 1); }
+        public static Vector2Int InvertY(Vector2Int _in) { return _in * new Vector2Int(1, -1); }
     }
 }

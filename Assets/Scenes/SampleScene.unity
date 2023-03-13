@@ -283,6 +283,8 @@ MonoBehaviour:
   width: 500
   height: 500
   brushSize: 1
+  FPS: 30
+  SelectedElement: 0
   useCoroutine: 0
   simulateDone: 0
 --- !u!4 &2090333887
