@@ -12,12 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f513a524a02c5394391026f58e4c354d, type: 3}
   m_Name: G_CO2
   m_EditorClassIdentifier: 
-  <displayName>k__BackingField: Smoke
-  <color>k__BackingField: {r: 0.2264151, g: 0.19330722, b: 0.19330722, a: 1}
+  <displayName>k__BackingField: Carbon Dioxide
+  <color>k__BackingField: {r: 0.11320752, g: 0.11320752, b: 0.11320752, a: 1}
   <useGravity>k__BackingField: 1
   <stackingHeight>k__BackingField: 1
-  <density>k__BackingField: 10
+  <density>k__BackingField: 5
   <corrodable>k__BackingField: 0
-  <corrosionChance>k__BackingField: 0
   <corrosionResult>k__BackingField: {fileID: 0}
+  <corrosionChance>k__BackingField: 0
+  <flammability>k__BackingField: 0
+  <burnResult>k__BackingField: {fileID: 0}
   <state>k__BackingField: 2

@@ -280,11 +280,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a965f7fd1998f4342950dd44d4d6c18b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  gravity: 0.1
+  maxVelocity: 1
+  liquidSideVelocity: 1
   width: 200
   height: 200
-  brushSize: 1
+  brushSize: 5
   FPS: 30
-  SelectedElement: {fileID: 11400000, guid: 2e817b81ffc4eff4488ad0bd65c61526, type: 2}
+  stepdown_Size: 5
+  stepdown_Steps: 20
+  SelectedElement: {fileID: 11400000, guid: c266118e40f60b947a2a10600586e26e, type: 2}
   immutableWall: {fileID: 11400000, guid: 725db109e87b2f24b8378067606ca927, type: 2}
   air: {fileID: 11400000, guid: ef91500681c46b949ad7528ee225e483, type: 2}
   useCoroutine: 0

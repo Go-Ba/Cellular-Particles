@@ -18,6 +18,8 @@ MonoBehaviour:
   <stackingHeight>k__BackingField: 1
   <density>k__BackingField: 2000
   <corrodable>k__BackingField: 1
+  <corrosionResult>k__BackingField: {fileID: 11400000, guid: 4c08ab1c164d92f49a609517b2b157dc, type: 2}
   <corrosionChance>k__BackingField: 0
-  <corrosionResult>k__BackingField: {fileID: 0}
+  <flammability>k__BackingField: 0.1
+  <burnResult>k__BackingField: {fileID: 11400000, guid: c0f4e9f2b66b0d64785007bbcbbe9de8, type: 2}
   <state>k__BackingField: 0

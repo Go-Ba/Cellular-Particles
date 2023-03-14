@@ -12,12 +12,55 @@ public class ObjectParticleSim2D : MonoBehaviour
         public Vector2 velocity = Vector2.zero;
         public bool hasSimulated = false;
         public bool needsRedraw = false;
+        int updateFrame_Vertical;
+        int updateFrame_Horizontal;
+        float verticalMovement;
+        public void ResetCell(ElementData _data)
+        {
+            Data = _data;
+            needsRedraw = true;
+            hasSimulated = false;
+            verticalMovement = 0;
+            velocity = Vector2.zero;
+        }
         public void SetElement(ElementData _in) { Data = _in; }
+        public void UpdateVelocity(Vector2 _velocityAdd, float _maxVelocity)
+        {
+            velocity += _velocityAdd;
+            if (velocity.y > _maxVelocity)
+                velocity.y = _maxVelocity;
+            if (velocity.y < -_maxVelocity)
+                velocity.y = -_maxVelocity;
+            verticalMovement += velocity.y;
+            //Debug.Log("velocity " + velocity + " movement " + verticalMovement);
+        }
+        public int GetVerticalLoops(int _currentFrame)
+        {
+            if (verticalMovement >= 0)
+            {
+                if (verticalMovement < 1) return 0;
+                int floor = Mathf.FloorToInt(verticalMovement);
+                verticalMovement -= floor;
+                return floor;
+            }
+            else
+            {
+                if (verticalMovement > -1) return 0;
+                int ceil = Mathf.CeilToInt(verticalMovement);
+                verticalMovement -= ceil;
+                return ceil;
+            }
+        }
     }
+    [SerializeField] float gravity = 0.4f; //per frame
+    [SerializeField] float maxVelocity = 1f; //per frame
+    [SerializeField] int liquidSideVelocity = 1; //per frame
     [SerializeField] int width;
     [SerializeField] int height;
     [SerializeField] int brushSize = 1;
     [SerializeField] float FPS = 30;
+    [SerializeField] int stepdown_Size = 5;
+    [SerializeField] int stepdown_Steps = 10;
     [SerializeField] ElementData SelectedElement;
     [SerializeField] ElementData immutableWall;
     [SerializeField] ElementData air;
@@ -25,7 +68,7 @@ public class ObjectParticleSim2D : MonoBehaviour
 
     Cell[,] grid;
     Texture2D texture;
-    int frameNum;
+    int currentFrame;
 
     public bool useCoroutine;
     private void Update()
@@ -84,11 +127,8 @@ public class ObjectParticleSim2D : MonoBehaviour
     void ApplyBrush(int _x, int _y, ElementData _e)
     {
         for (int x = _x - brushSize; x <= _x + brushSize; x++)
-            for (int y = _y - brushSize; y <= _y + brushSize; y++)
-            {
-                grid[x, y].SetElement(_e);
-                grid[x, y].needsRedraw = true;
-            }
+            for (int y = _y - brushSize; y <= _y + brushSize; y++)         
+                grid[x, y].ResetCell(_e);           
     }
     Vector2Int GetMousePosition()
     {
@@ -131,15 +171,15 @@ public class ObjectParticleSim2D : MonoBehaviour
     }
     void Simulate()
     {
-        frameNum++;
+        currentFrame++;
         if (grid == null)
             InitGrid();
 
-        bool flipX = frameNum % 2 == 0;
+        bool flipX = currentFrame % 2 == 0;
         if (flipX)       
             SimulateRLDU();       
         else       
-            SimulateLRDU();       
+            SimulateLRDU(); 
     }
     void SimulateLRDU()
     {
@@ -168,7 +208,7 @@ public class ObjectParticleSim2D : MonoBehaviour
     public bool simulateDone;
     IEnumerator SlowSimulate()
     {
-        frameNum++;
+        currentFrame++;
         simulateDone = false;
         if (grid == null)
             InitGrid();
@@ -215,30 +255,65 @@ public class ObjectParticleSim2D : MonoBehaviour
     }
     void SolidUpdate(Vector2Int _pos)
     {
+        var pixel = grid[_pos.x, _pos.y];
         var data = grid[_pos.x, _pos.y].Data;
         if (data.useGravity == false)
             return;
 
+
+        //gravity
+        bool belowIsClear = !IsSolid(_pos, D.Down);
+        float r = Random.Range(0.9f, 1.1f);
+        if (belowIsClear)
+            pixel.UpdateVelocity(Vector2.down * gravity * r, maxVelocity);
+
+        int verticalUpdates = Mathf.Abs(pixel.GetVerticalLoops(currentFrame));
+        if (verticalUpdates == 0) return;
+        for (int i = 0; i < verticalUpdates; i++)
+        {
+            SolidLoop(ref _pos);
+        }
+    }
+    void SolidLoop(ref Vector2Int _pos)
+    {
+        bool belowIsClear = !IsSolid(_pos, D.Down);
         var dir = Random.value < 0.5f ? D.DownRight : D.DownLeft;
+        var data = grid[_pos.x, _pos.y].Data;
+
         //check below
-        if (!IsSolid(_pos, D.Down))
+        if (belowIsClear)
+        {
             ExpelPixel(_pos, D.Down);
+            _pos += D.Down;
+        }
 
         //regular falling
-        else if (data.stackingHeight <= 1) 
+        else if (data.stackingHeight <= 1)
         {
             if (!IsSolid(_pos, dir))
+            {
                 ExpelPixel(_pos, dir);
+                _pos += dir;
+            }
             else if (!IsSolid(_pos, D.InvertX(dir)))
+            {
                 ExpelPixel(_pos, D.InvertX(dir));
+                _pos += D.InvertX(dir);
+            }
         }
         //check a specific depth to the side to see if the stack is high enough to warrant falling
         else
         {
             if (!IsSolid(_pos, dir) && DepthCheck(_pos + dir, data.stackingHeight, MatterState.Gas))
+            {
                 ExpelPixel(_pos, dir + D.Down);
+                _pos += dir + D.Down;
+            }
             else if (!IsSolid(_pos, D.InvertX(dir)) && DepthCheck(_pos + D.InvertX(dir), data.stackingHeight, MatterState.Gas))
+            { 
                 ExpelPixel(_pos, D.InvertX(dir) + D.Down);
+                _pos += D.InvertX(dir) + D.Down;
+            }
         }
     }
     void LiquidUpdate(Vector2Int _pos)
@@ -248,46 +323,63 @@ public class ObjectParticleSim2D : MonoBehaviour
 
         TryCorrodeSurrounding(_pos);
 
-        //check below
-        if (IsGas(_pos, D.Down) || LocationIsLowerDensityLiquid(_pos, D.Down, data))
-            ExpelPixel(_pos, D.Down);
+        bool hasFallen = false;
 
-        //check down left and down right, but randomize which is checked first
-        if (IsGas(_pos, dir) || LocationIsLowerDensityLiquid(_pos, dir, data))
-            ExpelPixel(_pos, dir);
-        else if (IsGas(_pos, D.InvertX(dir)) || LocationIsLowerDensityLiquid(_pos, D.InvertX(dir), data))
-            ExpelPixel(_pos, D.InvertX(dir));
-
-        //check sides
-        else
+        for (int i = 0; i < liquidSideVelocity; i++)
         {
-            //if no velocity, get random velocity
-            var vel = grid[_pos.x, _pos.y].velocity;
-            if (vel.x == 0) vel = Random.value < 0.5f ? D.Right : D.Left;
+            //check below
+            if (!hasFallen)
+                if (IsGas(_pos, D.Down) || LocationIsLowerDensityLiquid(_pos, D.Down, data))
+                {
+                    ExpelPixel(_pos, D.Down);
+                    hasFallen = true;
+                }
 
-            //try to go in direction of velocity
-            //if it's blocked reverse velocity
-            //if both sides blocked, kill velocity
-            if (vel.x > 0)
-            {
-                if (IsGas(_pos, D.Right) || LocationIsLowerDensityLiquid(_pos, D.Right, data))
-                    ExpelPixel(_pos, D.Right);
-                else if (IsGas(_pos, D.Left) || LocationIsLowerDensityLiquid(_pos, D.Left, data))
-                    vel.x *= -1;
-                else
-                    vel.x = 0;
-            }
-            else if (vel.x < 0)
-            {
-                if (IsGas(_pos, D.Left) || LocationIsLowerDensityLiquid(_pos, D.Left, data))
-                    ExpelPixel(_pos, D.Left);
-                else if (IsGas(_pos, D.Right) || LocationIsLowerDensityLiquid(_pos, D.Right, data))
-                    vel.x *= -1;
-                else
-                    vel.x = 0;
-            }
+            //check down left and down right, but randomize which is checked first
+            if (IsGas(_pos, dir) || LocationIsLowerDensityLiquid(_pos, dir, data))
+                ExpelPixel(_pos, dir);
+            else if (IsGas(_pos, D.InvertX(dir)) || LocationIsLowerDensityLiquid(_pos, D.InvertX(dir), data))
+                ExpelPixel(_pos, D.InvertX(dir));
 
-            grid[_pos.x, _pos.y].velocity = vel;
+            //check sides
+            else
+            {
+                int sdDir = 0;
+                //if this is within a pile of liquid, don't check for the stepdown direction
+                if (!IsSame(_pos, D.Up) || !IsSame(_pos, D.Right) || !IsSame(_pos, D.Left))
+                    sdDir = GetStepdownDirection(_pos, data);
+                if (sdDir != 0)
+                    grid[_pos.x, _pos.y].velocity = Vector2.right * sdDir;
+
+
+                //if no velocity, get random velocity
+                var vel = grid[_pos.x, _pos.y].velocity;
+                if (vel.x == 0) vel = Random.value < 0.5f ? D.Right : D.Left;
+
+                //try to go in direction of velocity
+                //if it's blocked reverse velocity
+                //if both sides blocked, kill velocity
+                if (vel.x > 0)
+                {
+                    if (IsGas(_pos, D.Right) || LocationIsLowerDensityLiquid(_pos, D.Right, data))
+                        SwapPixels(_pos, D.Right);
+                    else if (IsGas(_pos, D.Left) || LocationIsLowerDensityLiquid(_pos, D.Left, data))
+                        vel.x *= -1;
+                    else
+                        vel.x = 0;
+                }
+                else if (vel.x < 0)
+                {
+                    if (IsGas(_pos, D.Left) || LocationIsLowerDensityLiquid(_pos, D.Left, data))
+                        SwapPixels(_pos, D.Left);
+                    else if (IsGas(_pos, D.Right) || LocationIsLowerDensityLiquid(_pos, D.Right, data))
+                        vel.x *= -1;
+                    else
+                        vel.x = 0;
+                }
+
+                grid[_pos.x, _pos.y].velocity = vel;
+            }
         }
     }
     public void GasUpdate(Vector2Int _pos)
@@ -323,6 +415,23 @@ public class ObjectParticleSim2D : MonoBehaviour
         else if (LocationIsHigherDensityGas(_pos, D.InvertX(dirX), data))
             ExpelPixel(_pos, D.InvertX(dirX));
         
+    }
+    int GetStepdownDirection(Vector2Int _pos, ElementData _data)
+    {
+        for (int i = 0; i < stepdown_Steps; i++)
+        {
+            var rightSide = GetElement(_pos, new Vector2Int(i * stepdown_Size, -1));
+            if (rightSide != _data && rightSide != immutableWall)
+                return 1;
+            var leftSide = GetElement(_pos, new Vector2Int(i * -stepdown_Size, -1));
+            if (leftSide != _data && leftSide != immutableWall)
+                return -1;
+        }
+        return 0;
+    }
+    bool IsSame(Vector2Int _pos, Vector2Int _direction)
+    {
+        return GetElement(_pos, Vector2Int.zero) == GetElement(_pos, _direction);
     }
     bool TryCorrodeSurrounding(Vector2Int _pos)
     {
