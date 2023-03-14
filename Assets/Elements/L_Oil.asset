@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f513a524a02c5394391026f58e4c354d, type: 3}
+  m_Name: L_Oil
+  m_EditorClassIdentifier: 
+  <displayName>k__BackingField: Oil
+  <color>k__BackingField: {r: 0.33962262, g: 0.21111871, b: 0.20986114, a: 1}
+  <useGravity>k__BackingField: 1
+  <stackingHeight>k__BackingField: 1
+  <density>k__BackingField: 500
+  <state>k__BackingField: 1

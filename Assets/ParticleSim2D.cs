@@ -14,6 +14,7 @@ enum Element
     Wood,
     Gravel
 }
+
 public class ParticleSim2D : MonoBehaviour
 {
     class Cell
