@@ -139,6 +139,8 @@ public class ParticleSim2D : MonoBehaviour
                 {
                     texture.SetPixel(x, y, GetColor(grid[x, y].ID));
                     grid[x, y].hasSimulated = false;
+                    grid[x, y].needsRedraw = false;
+
                 }
         texture.Apply();
     }
@@ -235,8 +237,8 @@ public class ParticleSim2D : MonoBehaviour
     }
     void WaterUpdate(Vector2Int _pos)
     {
+
         var dir = Random.value < 0.5f ? D.DownRight : D.DownLeft;
-        var dir2 = Random.value < 0.5f ? D.Right : D.Left;
         //check below
         if (GetElement(_pos, D.Down) == Element.Air)
             SwapPixels(_pos, D.Down);
@@ -246,12 +248,40 @@ public class ParticleSim2D : MonoBehaviour
             SwapPixels(_pos, dir);
         else if (GetElement(_pos, D.InvertX(dir)) == Element.Air)
             SwapPixels(_pos, D.InvertX(dir));
-        
+
         //check sides
-        else if (GetElement(_pos, dir2) == Element.Air)
-            SwapPixels(_pos, dir2);
-        else if (GetElement(_pos, D.InvertX(dir2)) == Element.Air)
-            SwapPixels(_pos, D.InvertX(dir2));
+        else
+        {
+            //if no velocity, get random velocity
+            var vel = grid[_pos.x, _pos.y].velocity;
+            if (vel.x == 0) vel = Random.value < 0.5f ? D.Right : D.Left;
+
+            //try to go in direction of velocity
+            //if it's blocked reverse velocity
+            //if both sides blocked, kill velocity
+            if (vel.x > 0)
+            {
+                if (GetElement(_pos, D.Right) == Element.Air)
+                    SwapPixels(_pos, D.Right);
+                else if (GetElement(_pos, D.Left) == Element.Air)
+                    vel.x *= -1;
+                else
+                    vel.x = 0;
+            }
+            else if (vel.x < 0)
+            {
+                if (GetElement(_pos, D.Left) == Element.Air)
+                    SwapPixels(_pos, D.Left);
+                else if (GetElement(_pos, D.Right) == Element.Air)
+                    vel.x *= -1;
+                else
+                    vel.x = 0;
+            }
+
+            grid[_pos.x, _pos.y].velocity = vel;
+
+
+        }
     }
     void GravelUpdate(Vector2Int _pos)
     {

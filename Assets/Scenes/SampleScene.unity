@@ -280,11 +280,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6c7fbfc1728b03f4bb8e54fc79ef4c04, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  width: 500
-  height: 500
+  width: 200
+  height: 200
   brushSize: 1
   FPS: 30
-  SelectedElement: 0
+  SelectedElement: 2
   useCoroutine: 0
   simulateDone: 0
 --- !u!4 &2090333887
