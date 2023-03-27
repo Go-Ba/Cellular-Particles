@@ -71,6 +71,10 @@ public class ObjectParticleSim2D : MonoBehaviour
     int currentFrame;
 
     public bool useCoroutine;
+    public void SetSelectedElement(ElementData _element)
+    {
+        SelectedElement = _element;
+    }
     private void Update()
     {
         if (!useCoroutine)
@@ -266,13 +270,14 @@ public class ObjectParticleSim2D : MonoBehaviour
         float r = Random.Range(0.9f, 1.1f);
         if (belowIsClear)
             pixel.UpdateVelocity(Vector2.down * gravity * r, maxVelocity);
-
+        /*
         int verticalUpdates = Mathf.Abs(pixel.GetVerticalLoops(currentFrame));
         if (verticalUpdates == 0) return;
         for (int i = 0; i < verticalUpdates; i++)
         {
             SolidLoop(ref _pos);
-        }
+        }*/
+        SolidLoop(ref _pos);
     }
     void SolidLoop(ref Vector2Int _pos)
     {
@@ -346,7 +351,7 @@ public class ObjectParticleSim2D : MonoBehaviour
             {
                 int sdDir = 0;
                 //if this is within a pile of liquid, don't check for the stepdown direction
-                if (!IsSame(_pos, D.Up) || !IsSame(_pos, D.Right) || !IsSame(_pos, D.Left))
+                if (!IsSame(_pos, D.Up) && !IsSame(_pos, D.Right) && !IsSame(_pos, D.Left))
                     sdDir = GetStepdownDirection(_pos, data);
                 if (sdDir != 0)
                     grid[_pos.x, _pos.y].velocity = Vector2.right * sdDir;

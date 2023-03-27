@@ -15,8 +15,11 @@ MonoBehaviour:
   <displayName>k__BackingField: Sand
   <color>k__BackingField: {r: 1, g: 0.70765895, b: 0, a: 1}
   <useGravity>k__BackingField: 1
-  <corrodable>k__BackingField: 1
-  <corrosionChance>k__BackingField: 0
   <stackingHeight>k__BackingField: 1
   <density>k__BackingField: 1000
+  <corrodable>k__BackingField: 1
+  <corrosionResult>k__BackingField: {fileID: 11400000, guid: c0f4e9f2b66b0d64785007bbcbbe9de8, type: 2}
+  <corrosionChance>k__BackingField: 0
+  <flammability>k__BackingField: 0
+  <burnResult>k__BackingField: {fileID: 0}
   <state>k__BackingField: 0

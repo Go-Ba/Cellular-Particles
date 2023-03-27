@@ -15,8 +15,11 @@ MonoBehaviour:
   <displayName>k__BackingField: Gravel
   <color>k__BackingField: {r: 0.46226418, g: 0.46226418, b: 0.46226418, a: 1}
   <useGravity>k__BackingField: 1
-  <corrodable>k__BackingField: 1
-  <corrosionChance>k__BackingField: 0
   <stackingHeight>k__BackingField: 5
   <density>k__BackingField: 1000
+  <corrodable>k__BackingField: 0
+  <corrosionResult>k__BackingField: {fileID: 0}
+  <corrosionChance>k__BackingField: 0
+  <flammability>k__BackingField: 0
+  <burnResult>k__BackingField: {fileID: 0}
   <state>k__BackingField: 0
